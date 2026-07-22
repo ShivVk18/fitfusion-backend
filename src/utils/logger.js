@@ -6,7 +6,7 @@ export const logger = {
     console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error.stack || error);
   },
   ai: (type, prompt, meta = {}) => {
-    console.log(`[AI-LOG] ${new Date().toISOString()} [${type}] Prompt length: ${prompt?.length || 0}`, meta);
+    // console log disabled
   },
   http: (req, res, responseTimeMs) => {
     console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} - ${responseTimeMs}ms`);

@@ -94,6 +94,7 @@ export const profileService = {
         fitnessGoal: updateData.fitnessGoal || updateData.FitnessGoal || user.fitnessGoal,
         experienceLevel: updateData.experienceLevel || updateData.ExperienceLevel || user.experienceLevel,
         injuries: updateData.injuries !== undefined ? updateData.injuries : (updateData.Injuries !== undefined ? updateData.Injuries : user.injuries),
+        isProfileSetup: true,
       },
       select: {
         id: true,

@@ -9,6 +9,7 @@ export const dashboardService = {
 
     // Fetch in parallel
     const [
+      user,
       activePlan,
       userWorkoutLogs,
       progressHistory,
@@ -16,6 +17,10 @@ export const dashboardService = {
       latestDiet,
       latestAIHistory,
     ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { weight: true },
+      }),
       prisma.workout.findFirst({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -88,9 +93,9 @@ export const dashboardService = {
     }
 
     // Weight progress
-    const latestWeight = progressHistory.length > 0 ? progressHistory[progressHistory.length - 1].weight : null;
-    const startingWeight = progressHistory.length > 0 ? progressHistory[0].weight : null;
-    const weightTrend = progressService.getWeightTrend ? progressService.getWeightTrend(progressHistory) : 'Stable';
+    const startingWeight = user?.weight || (progressHistory.length > 0 ? progressHistory[0].weight : null);
+    const latestWeight = progressHistory.length > 0 ? progressHistory[progressHistory.length - 1].weight : startingWeight;
+    const weightTrend = progressService.weightTrend ? progressService.weightTrend(progressHistory) : 'Stable';
 
     // Strength progress
     const strengthProgress = progressHistory.length >= 2

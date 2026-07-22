@@ -101,6 +101,8 @@ export const generateBasicRecommendations = (progress) => {
 };
 
 export const progressService = {
+  weightTrend,
+  generateBasicRecommendations,
   async addProgress(userId, progressData) {
     const { weight, body_fat, bodyFat, chest, waist, biceps, date } = progressData;
     const entryDate = date || new Date().toISOString().split('T')[0];

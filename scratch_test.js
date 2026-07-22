@@ -1,16 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { GoogleGenAI } from '@google/genai';
+import { dashboardService } from './src/services/dashboardService.js';
 
-async function testFormat() {
-  const ai = new GoogleGenAI({});
-
-  const interaction = await ai.interactions.create({
-    model: 'gemini-3.5-flash',
-    input: 'Explain how AI works in a few words',
-  });
-
-  console.log("Format Output:", interaction.output_text);
+async function main() {
+  try {
+    const data = await dashboardService.getDashboardData('e4ee7b2d-996f-4a16-a33a-815adecf94d4');
+    console.log('DASHBOARD DATA:', JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Failed to get dashboard data:', err);
+  }
 }
 
-testFormat();
+main();
