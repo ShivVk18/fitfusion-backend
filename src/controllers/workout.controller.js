@@ -1,104 +1,38 @@
-import { ApiResponse } from "../config/ApiHandler.js";
-import { ApiError } from "../config/ErrorHandler.js";
-import { asyncHandler } from "../config/asyncHandler.js";
-import { generateWorkoutPlan } from "../AiServices/workout.generate.js";
-import UserModel from "../model/user.model.js";
-import WorkoutModel from "../model/workout.model.js";
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { workoutService } from '../services/workoutService.js';
+import { aiService } from '../services/aiService.js';
+import { profileService } from '../services/profileService.js';
 
-const generateWorkoutPlanController = asyncHandler(async(req,res)=> {
-    const {userId} = req.user.id 
+export const generateWorkoutPlanController = asyncHandler(async (req, res) => {
+  const daysPerWeek = Number(req.body.DaysPerWeek || req.body.daysPerWeek || 4);
+  const userProfile = await profileService.getProfile(req.user.id);
+  
+  const generatedPlan = await aiService.generateWorkoutPlan(req.user.id, userProfile, daysPerWeek);
+  const savedWorkout = await workoutService.createWorkoutPlan(req.user.id, generatedPlan);
 
-    const {DaysPerWeek} = req.body 
+  return res.status(200).json(new ApiResponse(200, savedWorkout, 'Workout plan generated successfully'));
+});
 
-    if(!DaysPerWeek || isNaN(DaysPerWeek) || DaysPerWeek < 1 || DaysPerWeek > 7){
-        throw new ApiError(400,"DaysPerWeek must be a number between 1 and 7")
-    } 
+export const getWorkoutPlans = asyncHandler(async (req, res) => {
+  const workoutPlans = await workoutService.getUserWorkouts(req.user.id);
+  const message = workoutPlans.length > 0 ? 'Workout plans fetched successfully' : 'No workout plans found for this user';
+  return res.status(200).json(new ApiResponse(200, workoutPlans, message));
+});
 
-    const profile = await UserModel.findById({userId}).select(-password -refreshToken)
+export const getWorkoutPlanById = asyncHandler(async (req, res) => {
+  const workoutPlan = await workoutService.getWorkoutById(req.user.id, req.params.planId);
+  return res.status(200).json(new ApiResponse(200, workoutPlan, 'Workout plan fetched successfully'));
+});
 
-    if(!profile){
-        throw new ApiError(404,"User not found")
-    }
+export const deleteWorkoutPlan = asyncHandler(async (req, res) => {
+  await workoutService.deleteWorkoutPlan(req.user.id, req.params.planId);
+  return res.status(200).json(new ApiResponse(200, {}, 'Workout plan deleted successfully'));
+});
 
-    const workoutPlan = await generateWorkoutPlan(profile,DaysPerWeek) 
-
-    const workoutPlanCreate = await WorkoutModel.create({
-        userId:userId,
-        plan_name:workoutPlan.plan_name,
-        split_type:workoutPlan.split_type,
-        days:workoutPlan.days,
-        created_by_AI:true,
-        duration:workoutPlan.duration
-    }) 
-
-    res.status(200).json(new ApiResponse(200,workoutPlanCreate,"Workout Plan Generated Successfully"))
-})
-
-const getWorkoutPlans = asyncHandler(async(req,res) => {
-    const {userId} = req.user.id 
-
-
-    const isProfile = await UserModel.findById({userId})
-
-    if(!isProfile){
-        throw new ApiError(404,"User not found")
-    }
-
-    const workoutPlans = await WorkoutModel.find({userId:userId}) 
-    
-    const message = workoutPlans.length > 0 ? "Workout Plans fetched successfully" : "No workout plans found for this user" 
-
-    res.status(200).json(new ApiResponse(200,workoutPlans,message)) 
-
-
-
-
-})
-
-const getWorkoutPlanById = asyncHandler(async(req,res) => {
-    const {userId} = req.user.id 
-    const {planId} = req.params
-
-    const isProfile = await UserModel.findById({userId})
-
-    if(!isProfile){
-        throw new ApiError(404,"User not found")
-    }
-
-    const workoutPlan = await WorkoutModel.findOne({_id:planId,userId:userId})
-
-    if(!workoutPlan){
-        throw new ApiError(404,"Workout plan not found")
-    }
-
-    res.status(200).json(new ApiResponse(200,workoutPlan,"Workout Plan fetched successfully")) 
-}) 
-
-
-const deleteWorkoutPlan = asyncHandler(async(req,res) => {
-    const {userId} = req.user.id 
-    const {planId} = req.params
-
-    const isProfile = await UserModel.findById({userId})
-
-    if(!isProfile){
-        throw new ApiError(404,"User not found")
-    }
-
-    const workoutPlan = await WorkoutModel.findOne({_id:planId,userId:userId})
-
-    if(!workoutPlan){
-        throw new ApiError(404,"Workout plan not found")
-    }
-
-    await WorkoutModel.findByIdAndDelete(planId)
-
-    res.status(200).json(new ApiResponse(200,{}, "Workout Plan deleted successfully")) 
-})
-
-export {
-    generateWorkoutPlanController,
-    getWorkoutPlans,
-    getWorkoutPlanById,
-    deleteWorkoutPlan
-}
+export default {
+  generateWorkoutPlanController,
+  getWorkoutPlans,
+  getWorkoutPlanById,
+  deleteWorkoutPlan,
+};

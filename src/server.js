@@ -1,55 +1,49 @@
-import dotenv from 'dotenv'
-import http from 'http'
-import connectDB from './utils/dbConnect.js'
-import app from './index.js'
-dotenv.config()
+import dotenv from 'dotenv';
 
-const server = http.createServer(app)
+dotenv.config();
 
-const PORT = process.env.PORT || 8000 
+import http from 'http';
+import app from './app.js';
+import { prisma } from './lib/prisma.js';
 
-const startServer = async() => { 
-    try {
-        await connectDB() 
 
-        console.log("Database Connected Successfully") 
+const server = http.createServer(app);
+const PORT = process.env.PORT || 5000;
 
-        server.listen(PORT,()=>{
-            console.log(`Server is running on port ${PORT}`)
-        })
-    } catch (error) {
-        console.error("Error starting server:", error)
-    }
-}
+const startServer = async () => {
+  try {
+    // Test Prisma database connection
+    await prisma.$connect();
+    console.log('✅ PostgreSQL Database connected via Prisma ORM.');
 
-startServer()
+    server.listen(PORT, () => {
+      console.log(`🚀 AI Gym Personal Trainer Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to connect to database or start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
 const shutdown = async (signal) => {
-    console.log(`\n${signal} received. Shutting down...`)
+  console.log(`\n${signal} signal received. Shutting down gracefully...`);
+  server.close(async () => {
+    console.log('HTTP server closed.');
+    await prisma.$disconnect();
+    console.log('Prisma disconnected.');
+    process.exit(0);
+  });
+};
 
-    server.close(() => {
-        console.log("HTTP server closed")
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
-        // 👉 if you have mongoose:
-        // mongoose.connection.close(false, () => {
-        //     console.log("MongoDB connection closed")
-        //     process.exit(0)
-        // })
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
 
-        process.exit(0)
-    })
-}
-
-process.on("uncaughtException", (err) => {
-    console.error("Uncaught Exception:", err)
-    process.exit(1)
-})
-
-process.on("unhandledRejection", (err) => {
-    console.error("Unhandled Rejection:", err)
-    process.exit(1)
-})
-
-
-// listen to signals
-process.on("SIGINT", shutdown)   // Ctrl + C
-process.on("SIGTERM", shutdown)  // system kill
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
