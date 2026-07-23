@@ -11,9 +11,10 @@ FROM node:26-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN npm install --omit=dev
 COPY --from=builder /app/prisma/generated ./prisma/generated
 COPY src ./src/
 
 EXPOSE 8000
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "npx prisma db push && node src/server.js"]
