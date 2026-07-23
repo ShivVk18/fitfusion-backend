@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 
 COPY package*.json ./
 COPY prisma ./prisma/
-COPY prisma.config.ts ./
+COPY prisma.config.js ./
 COPY src ./src/
 
 RUN npm install --omit=dev
